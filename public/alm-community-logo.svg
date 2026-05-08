@@ -1,0 +1,16 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="95" fill="#1a2744" stroke="#c9a84c" stroke-width="3"/>
+  
+  <!-- Blue stripe (top third) -->
+  <rect x="20" y="30" width="160" height="45" fill="#0052cc"/>
+  
+  <!-- White stripe (middle third) -->
+  <rect x="20" y="75" width="160" height="45" fill="#ffffff"/>
+  
+  <!-- Red stripe (bottom third) -->
+  <rect x="20" y="120" width="160" height="45" fill="#cc0000"/>
+  
+  <!-- ALM Text -->
+  <text x="100" y="170" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#c9a84c" text-anchor="middle">ALM</text>
+</svg>

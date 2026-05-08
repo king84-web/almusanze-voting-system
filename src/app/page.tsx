@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import Link from "next/link";
-import { CountdownTimer } from "@/components/countdown-timer";
+import HeroSection from "@/components/hero-section";
 import { db, electionSettings } from "@/lib/db";
 import { desc } from "drizzle-orm";
 
@@ -20,10 +19,11 @@ export default async function Home() {
   const targetDate = settings?.voting_start?.toISOString() ?? "2026-12-31T00:00:00.000Z";
 
   return (
-    <main className="min-h-screen bg-[#f4f4f7] text-[#1a2744]">
-      <section className="mx-auto flex min-h-screen max-w-7xl flex-col justify-between px-6 py-10 lg:px-12">
-        <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-2xl space-y-6">
+    <main className="min-h-screen bg-[#1a2744]">
+      <HeroSection settings={settings} targetDate={targetDate} />
+    </main>
+  );
+}
             <div className="inline-flex rounded-full bg-[#1a2744] px-4 py-2 text-sm font-semibold uppercase tracking-[0.32em] text-white shadow-sm">
               ALM General Elections
             </div>
