@@ -52,6 +52,7 @@ export const candidates = pgTable("candidates", {
   full_name: text("full_name").notNull(),
   profile_picture: text("profile_picture"),
   position_id: uuid("position_id").references(() => positions.id),
+  team_id: uuid("team_id").references(() => teams.id),
   bio: text("bio").notNull(),
   running_mate_name: text("running_mate_name"),
   created_at: timestamp("created_at").notNull().defaultNow(),
