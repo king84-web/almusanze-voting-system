@@ -32,13 +32,16 @@ export default function AdminCandidatesPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
   const [values, setValues] = useState({
-    full_name: "",
-    position_id: "",
     team_id: "",
-    bio: "",
-    running_mate_name: "",
-    image: null as File | null,
+    candidates: [
+      { full_name: "", bio: "", image: null as File | null },
+      { full_name: "", bio: "", image: null as File | null },
+      { full_name: "", bio: "", image: null as File | null },
+      { full_name: "", bio: "", image: null as File | null },
+    ],
   });
+
+  const positionTitles = ["President", "Vice President", "General Secretary", "Financial Secretary"];
 
   async function loadCandidates() {
     const response = await fetch("/api/candidates");
@@ -63,46 +66,82 @@ export default function AdminCandidatesPage() {
   }
 
   useEffect(() => {
-    loadCandidates().catch(() => {
-      setCandidates([]);
-    });
-    loadMeta().catch(() => {
-      setTeams([]);
-      setPositions([]);
-    });
+    const loadData = async () => {
+      try {
+        await loadCandidates();
+      } catch {
+        setCandidates([]);
+      }
+      try {
+        await loadMeta();
+      } catch {
+        setTeams([]);
+        setPositions([]);
+      }
+    };
+    loadData();
   }, []);
 
   async function addCandidate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!values.image) {
-      toast.error("Please upload a photo");
+    if (!values.team_id) {
+      toast.error("Please select a team");
       return;
     }
 
-    if (!values.full_name || !values.position_id || !values.team_id || !values.bio) {
-      toast.error("Please complete all required fields");
+    // Check if at least one candidate has data
+    const hasCandidates = values.candidates.some(candidate => candidate.full_name && candidate.bio && candidate.image);
+    if (!hasCandidates) {
+      toast.error("Please add at least one candidate with name, bio, and photo");
       return;
     }
 
-    const formData = new FormData();
-    formData.append("full_name", values.full_name);
-    formData.append("position_id", values.position_id);
-    formData.append("team_id", values.team_id);
-    formData.append("bio", values.bio);
-    formData.append("running_mate_name", values.running_mate_name);
-    formData.append("image", values.image);
+    try {
+      // Get positions for the selected team
+      const teamPositions = positions.filter(pos => pos.team_id === values.team_id);
 
-    const response = await fetch("/api/candidates", { method: "POST", body: formData });
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: "Candidate upload failed" }));
-      toast.error(error.message ?? "Candidate upload failed");
-      return;
+      for (let i = 0; i < values.candidates.length; i++) {
+        const candidate = values.candidates[i];
+        if (!candidate.full_name || !candidate.bio || !candidate.image) continue;
+
+        const position = teamPositions.find(pos => pos.display_name === positionTitles[i]);
+        if (!position) {
+          toast.error(`Position ${positionTitles[i]} not found for this team`);
+          continue;
+        }
+
+        const formData = new FormData();
+        formData.append("full_name", candidate.full_name);
+        formData.append("position_id", position.id);
+        formData.append("team_id", values.team_id);
+        formData.append("bio", candidate.bio);
+        formData.append("image", candidate.image);
+
+        const response = await fetch("/api/candidates", { method: "POST", body: formData });
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({ message: "Upload failed" }));
+          toast.error(`Failed to add ${candidate.full_name}: ${error.message}`);
+          continue;
+        }
+
+        toast.success(`${candidate.full_name} added successfully`);
+      }
+
+      // Reset form
+      setValues({
+        team_id: "",
+        candidates: [
+          { full_name: "", bio: "", image: null },
+          { full_name: "", bio: "", image: null },
+          { full_name: "", bio: "", image: null },
+          { full_name: "", bio: "", image: null },
+        ],
+      });
+      loadCandidates().catch(() => setCandidates([]));
+    } catch (error) {
+      toast.error("Failed to add candidates");
     }
-
-    toast.success("Candidate created");
-    setValues({ full_name: "", position_id: "", team_id: "", bio: "", running_mate_name: "", image: null });
-    loadCandidates().catch(() => setCandidates([]));
   }
 
   async function deleteCandidate(candidateId: string) {
@@ -128,85 +167,89 @@ export default function AdminCandidatesPage() {
       </div>
 
       <div className="grid gap-8 xl:grid-cols-[1fr_1.5fr]">
-        <form onSubmit={addCandidate} className="rounded-4xl border border-slate-200 bg-white p-8 shadow-sm space-y-5">
-          <h2 className="text-xl font-semibold text-[#1a2744]">Add candidate</h2>
+        <form onSubmit={addCandidate} className="rounded-4xl border border-slate-200 bg-white p-8 shadow-sm space-y-6">
+          <h2 className="text-xl font-semibold text-[#1a2744]">Add Team Candidates</h2>
+
           <label className="block text-sm font-medium text-slate-700">
-            Candidate name
-            <input
-              type="text"
-              value={values.full_name}
-              onChange={(e) => setValues((current) => ({ ...current, full_name: e.target.value }))}
-              placeholder="Full name"
+            Select Team
+            <select
+              value={values.team_id}
+              onChange={(e) => setValues((current) => ({ ...current, team_id: e.target.value }))}
               className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none focus:border-[#1a2744] focus:ring-2 focus:ring-[#c9a84c]/30"
-            />
+            >
+              <option value="">Select team</option>
+              {teams.map((team) => (
+                <option key={team.id} value={team.id}>
+                  {team.name}
+                </option>
+              ))}
+            </select>
           </label>
-          <label className="block text-sm font-medium text-slate-700">
-            Candidate bio
-            <textarea
-              value={values.bio}
-              onChange={(e) => setValues((current) => ({ ...current, bio: e.target.value }))}
-              placeholder="Bio"
-              className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none focus:border-[#1a2744] focus:ring-2 focus:ring-[#c9a84c]/30"
-              rows={4}
-            />
-          </label>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block text-sm font-medium text-slate-700">
-              Position
-              <select
-                value={values.position_id}
-                onChange={(e) => setValues((current) => ({ ...current, position_id: e.target.value }))}
-                className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none focus:border-[#1a2744] focus:ring-2 focus:ring-[#c9a84c]/30"
+
+          {values.team_id && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-medium text-[#1a2744]">Add Candidates for {teams.find(t => t.id === values.team_id)?.name}</h3>
+
+              {values.candidates.map((candidate, index) => (
+                <div key={index} className="rounded-2xl border border-slate-200 bg-slate-50 p-6 space-y-4">
+                  <h4 className="text-md font-semibold text-[#1a2744]">{positionTitles[index]}</h4>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="block text-sm font-medium text-slate-700">
+                      Candidate Name
+                      <input
+                        type="text"
+                        value={candidate.full_name}
+                        onChange={(e) => {
+                          const newCandidates = [...values.candidates];
+                          newCandidates[index].full_name = e.target.value;
+                          setValues((current) => ({ ...current, candidates: newCandidates }));
+                        }}
+                        placeholder={`Enter ${positionTitles[index]} name`}
+                        className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-[#1a2744] focus:ring-2 focus:ring-[#c9a84c]/30"
+                      />
+                    </label>
+
+                    <label className="block text-sm font-medium text-slate-700">
+                      Profile Photo
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const newCandidates = [...values.candidates];
+                          newCandidates[index].image = e.target.files?.[0] || null;
+                          setValues((current) => ({ ...current, candidates: newCandidates }));
+                        }}
+                        className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-[#1a2744] focus:ring-2 focus:ring-[#c9a84c]/30 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1a2744] file:text-white hover:file:bg-[#2a3a54]"
+                      />
+                    </label>
+                  </div>
+
+                  <label className="block text-sm font-medium text-slate-700">
+                    Bio
+                    <textarea
+                      value={candidate.bio}
+                      onChange={(e) => {
+                        const newCandidates = [...values.candidates];
+                        newCandidates[index].bio = e.target.value;
+                        setValues((current) => ({ ...current, candidates: newCandidates }));
+                      }}
+                      placeholder={`Bio for ${positionTitles[index]}`}
+                      className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-[#1a2744] focus:ring-2 focus:ring-[#c9a84c]/30"
+                      rows={3}
+                    />
+                  </label>
+                </div>
+              ))}
+
+              <button
+                type="submit"
+                className="w-full rounded-3xl bg-[#1a2744] px-8 py-4 text-base font-semibold text-white transition hover:bg-[#2a3a54] focus:ring-2 focus:ring-[#c9a84c]/30"
               >
-                <option value="">Select position</option>
-                {positions.map((position) => (
-                  <option key={position.id} value={position.id}>
-                    {position.display_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block text-sm font-medium text-slate-700">
-              Team
-              <select
-                value={values.team_id}
-                onChange={(e) => setValues((current) => ({ ...current, team_id: e.target.value }))}
-                className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none focus:border-[#1a2744] focus:ring-2 focus:ring-[#c9a84c]/30"
-              >
-                <option value="">Select team</option>
-                {teams.map((team) => (
-                  <option key={team.id} value={team.id}>
-                    {team.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <label className="block text-sm font-medium text-slate-700">
-            Running mate
-            <input
-              type="text"
-              value={values.running_mate_name}
-              onChange={(e) => setValues((current) => ({ ...current, running_mate_name: e.target.value }))}
-              placeholder="Running mate name"
-              className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none focus:border-[#1a2744] focus:ring-2 focus:ring-[#c9a84c]/30"
-            />
-          </label>
-          <label className="block text-sm font-medium text-slate-700">
-            Profile photo
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(event) => {
-                const file = event.target.files?.[0] ?? null;
-                setValues((current) => ({ ...current, image: file }));
-              }}
-              className="mt-2 w-full text-sm text-slate-600"
-            />
-          </label>
-          <button type="submit" className="rounded-full bg-[#c9a84c] px-6 py-3 text-sm font-semibold text-[#1a2744] hover:bg-[#b7a33b]">
-            Save candidate
-          </button>
+                Add Team Candidates
+              </button>
+            </div>
+          )}
         </form>
 
         <div className="space-y-6">

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db, electionSettings, positions, users, votes } from "@/lib/db";
+import { db, users, votes } from "@/lib/db";
 import { getCurrentUser, requireAdmin } from "@/lib/server/auth";
 import { and, count, eq } from "drizzle-orm";
 

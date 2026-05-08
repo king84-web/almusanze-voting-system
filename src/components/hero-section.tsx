@@ -8,7 +8,10 @@ import { Lock } from "lucide-react";
 
 interface ElectionSettings {
   election_name?: string;
-  [key: string]: any;
+  is_active?: boolean;
+  allow_registration?: boolean;
+  voting_start?: Date | string | null;
+  voting_end?: Date | string | null;
 }
 
 interface HeroSectionProps {
@@ -47,7 +50,7 @@ export default function HeroSection({ settings, targetDate }: HeroSectionProps) 
               </div>
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight tracking-tight text-white drop-shadow-lg">
-              Vote for Liberia's future leaders in Musanze.
+              Vote for Liberia&apos;s future leaders in Musanze.
             </h1>
             <p className="max-w-xl text-sm sm:text-base lg:text-lg leading-7 sm:leading-8 text-white/90 drop-shadow">
               The Association of Liberians in Musanze empowers members with a secure voting experience, transparent results, and election management for every candidate and member.

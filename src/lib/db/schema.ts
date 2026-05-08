@@ -1,7 +1,7 @@
 import { pgEnum, pgTable, uuid, text, timestamp, boolean, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const userRole = pgEnum("user_role", ["member", "admin"]);
-export const positionTitle = pgEnum("position_title", ["president_vp", "general_secretary", "financial_secretary"]);
+export const positionTitle = pgEnum("position_title", ["president", "vice_president", "general_secretary", "financial_secretary"]);
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),

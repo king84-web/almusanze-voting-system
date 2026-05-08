@@ -31,7 +31,11 @@ async function seed() {
     .values({ name: "Team B", description: "Second competing team" })
     .returning({ id: teams.id });
 
-  const positionRecords = [
+  const positionRecords: Array<{
+    title: "president" | "vice_president" | "general_secretary" | "financial_secretary";
+    display_name: string;
+    is_combined: boolean;
+  }> = [
     { title: "president", display_name: "President", is_combined: false },
     { title: "vice_president", display_name: "Vice President", is_combined: false },
     { title: "general_secretary", display_name: "General Secretary", is_combined: false },
@@ -42,7 +46,7 @@ async function seed() {
     [teamA.id, teamB.id].flatMap((teamId) =>
       positionRecords.map((position) =>
         db.insert(positions).values({
-          title: position.title as "president" | "vice_president" | "general_secretary" | "financial_secretary",
+          title: position.title,
           display_name: position.display_name,
           is_combined: position.is_combined,
           team_id: teamId,

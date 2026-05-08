@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import ResultsChart from "@/components/results-chart";
-import { db, auditLogs, candidates, positions, teams, users, votes } from "@/lib/db";
+import { db, auditLogs, candidates, teams, users, votes } from "@/lib/db";
 import { sql, desc, eq, and } from "drizzle-orm";
 
 async function getStats() {
