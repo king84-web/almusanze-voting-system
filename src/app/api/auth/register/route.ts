@@ -1,13 +1,13 @@
 import { hash } from "bcryptjs";
 import { NextResponse } from "next/server";
 import { db, users } from "@/lib/db";
-import { registerSchema } from "@/lib/validations";
+import { registerRequestSchema } from "@/lib/validations";
 import { eq, or } from "drizzle-orm";
 
 export async function POST(request: Request) {
   const body = await request.json();
 
-  const parseResult = registerSchema.safeParse(body);
+  const parseResult = registerRequestSchema.safeParse(body);
 
   if (!parseResult.success) {
     return NextResponse.json({ message: parseResult.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });

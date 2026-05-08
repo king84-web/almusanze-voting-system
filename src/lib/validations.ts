@@ -14,6 +14,8 @@ export const registerSchema = z
     path: ["confirmPassword"],
   });
 
+export const registerRequestSchema = registerSchema.omit({ confirmPassword: true });
+
 export const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
   password: z.string().min(8, "Password must be at least 8 characters"),
