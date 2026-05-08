@@ -30,15 +30,30 @@ export const positions = pgTable("positions", {
   team_id: uuid("team_id").references(() => teams.id),
 });
 
+export const candidateApplications = pgTable("candidate_applications", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  full_name: text("full_name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
+  position_id: uuid("position_id").references(() => positions.id),
+  team_id: uuid("team_id").references(() => teams.id),
+  party: text("party").notNull(),
+  bio: text("bio").notNull(),
+  previous_leadership_positions: text("previous_leadership_positions").notNull(),
+  letter_of_intent: text("letter_of_intent").notNull(),
+  profile_picture: text("profile_picture"),
+  running_mate_name: text("running_mate_name"),
+  status: text("status").notNull().default("pending"), // pending, approved, rejected
+  created_at: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const candidates = pgTable("candidates", {
   id: uuid("id").defaultRandom().primaryKey(),
   full_name: text("full_name").notNull(),
   profile_picture: text("profile_picture"),
   position_id: uuid("position_id").references(() => positions.id),
-  team_id: uuid("team_id").references(() => teams.id),
   bio: text("bio").notNull(),
   running_mate_name: text("running_mate_name"),
-  running_mate_picture: text("running_mate_picture"),
   created_at: timestamp("created_at").notNull().defaultNow(),
 });
 

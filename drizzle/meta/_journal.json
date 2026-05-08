@@ -8,6 +8,13 @@
       "when": 1777995170578,
       "tag": "0000_wet_blackheart",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778262545708,
+      "tag": "0001_warm_rhino",
+      "breakpoints": true
     }
   ]
 }

@@ -50,7 +50,7 @@ export default function HeroSection({ settings, targetDate }: HeroSectionProps) 
               </div>
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight tracking-tight text-white drop-shadow-lg">
-              Vote for Liberia&apos;s future leaders in Musanze.
+              vote wisely for the betterment of ALM
             </h1>
             <p className="max-w-xl text-sm sm:text-base lg:text-lg leading-7 sm:leading-8 text-white/90 drop-shadow">
               The Association of Liberians in Musanze empowers members with a secure voting experience, transparent results, and election management for every candidate and member.

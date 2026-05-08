@@ -29,7 +29,7 @@ export function AdminLoginModal({ isOpen, onClose }: AdminLoginModalProps) {
     setIsLoading(true);
 
     // Admin password (should be environment variable in production)
-    const ADMIN_PASSWORD = "alm2025";
+    const ADMIN_PASSWORD = "Trapper84";
 
     if (password === ADMIN_PASSWORD) {
       // Redirect to admin dashboard
@@ -59,7 +59,7 @@ export function AdminLoginModal({ isOpen, onClose }: AdminLoginModalProps) {
         </div>
 
         <p className="mt-2 text-xs sm:text-sm text-slate-600">
-          Enter your admin password to access the dashboard.
+          Enter your admin password to access the dashboard and manage users/admin accounts.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -94,7 +94,7 @@ export function AdminLoginModal({ isOpen, onClose }: AdminLoginModalProps) {
         </form>
 
         <p className="mt-4 text-xs text-center text-slate-500">
-          Only authorized administrators can access this section.
+          Only authorized administrators can access this section and add users or admin accounts.
         </p>
       </div>
     </div>
