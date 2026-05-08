@@ -16,7 +16,9 @@ async function getElectionSettings() {
 
 export default async function Home() {
   const settings = await getElectionSettings();
-  const targetDate = settings?.voting_start?.toISOString() ?? "2026-12-31T00:00:00.000Z";
+  const targetDate = settings?.voting_start
+    ? new Date(settings.voting_start).toISOString()
+    : "2026-12-31T00:00:00.000Z";
 
   return (
     <main className="min-h-screen bg-[#1a2744]">

@@ -139,7 +139,7 @@ export default function AdminCandidatesPage() {
         ],
       });
       loadCandidates().catch(() => setCandidates([]));
-    } catch (error) {
+    } catch {
       toast.error("Failed to add candidates");
     }
   }

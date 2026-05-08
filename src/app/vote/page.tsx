@@ -20,7 +20,8 @@ interface Candidate {
 }
 
 const steps = [
-  { id: "president_vp", label: "President & Vice President" },
+  { id: "president", label: "President" },
+  { id: "vice_president", label: "Vice President" },
   { id: "general_secretary", label: "General Secretary" },
   { id: "financial_secretary", label: "Financial Secretary" },
 ];

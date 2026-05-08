@@ -109,16 +109,16 @@ export default function HeroSection({ settings, targetDate }: HeroSectionProps) 
         </section>
 
         <footer className="relative z-10 mt-12 sm:mt-16 lg:mt-24 rounded-4xl border border-white bg-white/10 backdrop-blur p-4 sm:p-6 lg:p-8 text-white shadow-lg">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-start">
             <div className="min-w-0">
               <p className="text-xs sm:text-sm uppercase tracking-[0.3em] text-white font-semibold">Association of Liberians in Musanze</p>
               <p className="mt-3 max-w-lg text-xs sm:text-sm leading-6 sm:leading-7 text-white/90">
                 Join your community election platform, promote democratic participation, and support the candidates you believe in.
               </p>
             </div>
-            <div className="space-y-1 text-xs sm:text-sm text-white/90 shrink-0">
-              <p>Contact: info@alm.org</p>
-              <p>Musanze, Rwanda</p>
+            <div className="space-y-1 text-xs sm:text-sm text-white/90 shrink-0 w-full sm:w-auto text-left sm:text-right">
+              <p className="break-words">Contact: <a href="tel:0792405593" className="underline decoration-white/40">0792405593</a></p>
+              <p className="break-words">Solomon Kamara — Developer</p>
             </div>
           </div>
         </footer>

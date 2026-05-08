@@ -9,7 +9,6 @@ import { z } from "zod";
 import { registerSchema } from "@/lib/validations";
 
 type RegisterForm = z.infer<typeof registerSchema>;
-type RegisterPayload = RegisterForm & { confirmPassword: string };
 
 export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,22 +16,20 @@ export default function RegisterPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<RegisterPayload>({
-    resolver: zodResolver(registerSchema) as unknown as Resolver<RegisterPayload>,
+  } = useForm<RegisterForm>({
+    resolver: zodResolver(registerSchema) as unknown as Resolver<RegisterForm>,
   });
 
-  async function onSubmit(values: RegisterPayload) {
-    if (values.password !== values.confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
-
+  async function onSubmit(values: RegisterForm) {
     setIsSubmitting(true);
+
+    const { confirmPassword, ...payload } = values;
+    void confirmPassword;
 
     const response = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
+      body: JSON.stringify(payload),
     });
 
     setIsSubmitting(false);
@@ -114,6 +111,7 @@ export default function RegisterPage() {
                 {...register("confirmPassword")}
                 className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#1a2744] focus:ring-2 focus:ring-[#c9a84c]/30"
               />
+              {errors.confirmPassword && <p className="mt-2 text-sm text-red-600">{errors.confirmPassword.message}</p>}
             </label>
           </div>
 

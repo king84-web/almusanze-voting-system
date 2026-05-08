@@ -15,10 +15,11 @@ export function AdminLoginModal({ isOpen, onClose }: AdminLoginModalProps) {
 
   useEffect(() => {
     if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPassword("");
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setError("");
+      const timeout = window.setTimeout(() => {
+        setPassword("");
+        setError("");
+      }, 0);
+      return () => window.clearTimeout(timeout);
     }
   }, [isOpen]);
 

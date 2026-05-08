@@ -44,6 +44,16 @@ export default function AdminSettingsPage() {
       .finally(() => setIsLoading(false));
   }, []);
 
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-[#f4f4f7] px-6 py-10 text-[#1a2744]">
+        <div className="mx-auto max-w-5xl rounded-4xl border border-slate-200 bg-white p-12 shadow-sm text-center">
+          <p className="text-lg font-semibold">Loading election settings...</p>
+        </div>
+      </main>
+    );
+  }
+
   async function saveSettings() {
     const response = await fetch("/api/election/settings", {
       method: "PATCH",
