@@ -1,7 +1,15 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/register", "/unauthorized", "/api/auth"];
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/register",
+  "/unauthorized",
+  "/forgot-password",
+  "/reset-password",
+  "/api/auth",
+];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -28,13 +36,20 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(unauthorizedUrl);
   }
 
-  if (pathname === "/dashboard" || pathname.startsWith("/vote")) {
-    return NextResponse.next();
-  }
-
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/dashboard", "/vote/:path*", "/unauthorized", "/login", "/register"],
+  matcher: [
+    "/",
+    "/forgot-password",
+    "/reset-password",
+    "/admin/:path*",
+    "/dashboard",
+    "/vote/:path*",
+    "/unauthorized",
+    "/login",
+    "/register",
+    "/api/auth/:path*",
+  ],
 };

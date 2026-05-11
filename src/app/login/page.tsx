@@ -1,65 +1,63 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { getSession, signIn } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { loginSchema } from "@/lib/validations";
-import type { z } from "zod";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
-type LoginForm = z.infer<typeof loginSchema>;
-
-const errorMessages: Record<string, string> = {
-  Configuration: "Server configuration error. Check environment variables.",
-  NotApproved: "Your account is pending admin approval. Please wait for approval before logging in.",
-  CredentialsSignin: "Invalid email or password.",
-};
-
-function LoginForm() {
+export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
-  });
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const initialError = useMemo(() => {
-    const error = searchParams?.get("error");
-    if (!error) {
-      return null;
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (!result) {
+        setError("No response from server. Try again.");
+        return;
+      }
+
+      if (result.error) {
+        if (result.error.includes("NotApproved")) {
+          setError("Your account is pending admin approval.");
+        } else {
+          setError("Invalid email or password.");
+        }
+        return;
+      }
+
+      if (result.ok) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        const sessionRes = await fetch("/api/auth/session");
+        const session = await sessionRes.json();
+
+        if (session?.user?.role === "admin") {
+          router.push("/admin/dashboard");
+          router.refresh();
+        } else {
+          router.push("/dashboard");
+          router.refresh();
+        }
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
-    return errorMessages[error] ?? "Login failed. Please try again.";
-  }, [searchParams]);
-
-  async function onSubmit(values: LoginForm) {
-    setIsSubmitting(true);
-    setLoginError(null);
-
-    const result = await signIn("credentials", {
-      redirect: false,
-      email: values.email,
-      password: values.password,
-    });
-
-    setIsSubmitting(false);
-
-    if (result?.error) {
-      setLoginError(errorMessages[result.error] ?? "Login failed. Please try again.");
-      return;
-    }
-
-    const session = await getSession();
-    const destination = session?.user?.role === "admin" ? "/admin/dashboard" : "/dashboard";
-    router.push(destination);
-  }
+  };
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#f4f4f7] px-6 py-10">
@@ -72,54 +70,59 @@ function LoginForm() {
           </p>
         </div>
 
-        {(loginError || initialError) && (
+        {error && (
           <div className="mt-8 rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {loginError || initialError}
+            {error}
           </div>
         )}
 
-        <form className="mt-10 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        <form className="mt-10 space-y-6" onSubmit={handleLogin}>
           <label className="block text-sm font-medium text-slate-700">
             Email
             <input
               type="email"
-              {...register("email")}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
               className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#1a2744] focus:ring-2 focus:ring-[#c9a84c]/30"
+              placeholder="your@email.com"
             />
-            {errors.email && <p className="mt-2 text-sm text-red-600">{errors.email.message}</p>}
           </label>
 
           <label className="block text-sm font-medium text-slate-700">
             Password
             <input
               type="password"
-              {...register("password")}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
               className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#1a2744] focus:ring-2 focus:ring-[#c9a84c]/30"
+              placeholder="••••••••"
             />
-            {errors.password && <p className="mt-2 text-sm text-red-600">{errors.password.message}</p>}
           </label>
+
+          <div className="text-right mb-6">
+            <Link href="/forgot-password" className="text-sm text-[#c9a84c] hover:underline">
+              Forgot Password?
+            </Link>
+          </div>
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isLoading}
             className="flex w-full items-center justify-center rounded-full bg-[#1a2744] px-6 py-3 text-base font-semibold text-white transition hover:bg-[#16203b] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSubmitting ? "Signing in..." : "Login"}
+            {isLoading ? "Signing in..." : "Sign In"}
           </button>
-        </form>
 
-        <p className="mt-6 text-center text-sm text-slate-600">
-          New to ALM? <Link href="/register" className="font-semibold text-[#1a2744]">Register now</Link>
-        </p>
+          <p className="text-center text-sm text-slate-600">
+            Do not have an account?{' '}
+            <Link href="/register" className="text-[#c9a84c] hover:underline">
+              Register here
+            </Link>
+          </p>
+        </form>
       </div>
     </main>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <LoginForm />
-    </Suspense>
   );
 }

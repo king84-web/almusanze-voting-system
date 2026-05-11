@@ -15,6 +15,15 @@ export const users = pgTable("users", {
   created_at: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const resetTokens = pgTable("reset_tokens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  user_id: uuid("user_id").references(() => users.id).notNull(),
+  token: text("token").notNull().unique(),
+  expires_at: timestamp("expires_at").notNull(),
+  used: boolean("used").default(false),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
 export const teams = pgTable("teams", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
