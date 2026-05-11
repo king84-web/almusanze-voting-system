@@ -5,6 +5,9 @@ import { db, users } from "./db";
 import { eq } from "drizzle-orm";
 
 const authOptions: NextAuthConfig = {
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+  trustHost: true,
+  debug: process.env.NODE_ENV === 'development',
   session: {
     strategy: "jwt",
   },

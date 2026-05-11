@@ -25,6 +25,7 @@ interface Position {
   title: string;
   display_name: string;
   team_id: string;
+  is_combined: boolean;
 }
 
 interface CandidateFormValues {
@@ -32,6 +33,8 @@ interface CandidateFormValues {
   bio: string;
   image: File | null;
   position_id: string;
+  running_mate_name: string;
+  running_mate_image: File | null;
 }
 
 interface CandidateApplication {
@@ -55,13 +58,15 @@ export default function AdminCandidatesPage() {
   const [applications, setApplications] = useState<CandidateApplication[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
+  const [teamPositions, setTeamPositions] = useState<Position[]>([]);
+  const [loadingPositions, setLoadingPositions] = useState(false);
   const [values, setValues] = useState({
     team_id: "",
     candidates: [
-      { full_name: "", bio: "", image: null as File | null, position_id: "" },
-      { full_name: "", bio: "", image: null as File | null, position_id: "" },
-      { full_name: "", bio: "", image: null as File | null, position_id: "" },
-      { full_name: "", bio: "", image: null as File | null, position_id: "" },
+      { full_name: "", bio: "", image: null as File | null, position_id: "", running_mate_name: "", running_mate_image: null as File | null },
+      { full_name: "", bio: "", image: null as File | null, position_id: "", running_mate_name: "", running_mate_image: null as File | null },
+      { full_name: "", bio: "", image: null as File | null, position_id: "", running_mate_name: "", running_mate_image: null as File | null },
+      { full_name: "", bio: "", image: null as File | null, position_id: "", running_mate_name: "", running_mate_image: null as File | null },
     ] as CandidateFormValues[],
   });
 
@@ -80,17 +85,30 @@ export default function AdminCandidatesPage() {
   }
 
   async function loadMeta() {
-    const [teamsResponse, positionsResponse] = await Promise.all([
-      fetch("/api/teams"),
-      fetch("/api/positions"),
-    ]);
-
+    const teamsResponse = await fetch("/api/teams");
     if (teamsResponse.ok) {
       setTeams(await teamsResponse.json());
     }
+  }
 
-    if (positionsResponse.ok) {
-      setPositions(await positionsResponse.json());
+  async function loadPositionsForTeam(teamId: string) {
+    if (!teamId) {
+      setTeamPositions([]);
+      return;
+    }
+    setLoadingPositions(true);
+    try {
+      const response = await fetch(`/api/positions?team_id=${teamId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setTeamPositions(data);
+      } else {
+        setTeamPositions([]);
+      }
+    } catch {
+      setTeamPositions([]);
+    } finally {
+      setLoadingPositions(false);
     }
   }
 
@@ -116,6 +134,10 @@ export default function AdminCandidatesPage() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    loadPositionsForTeam(values.team_id);
+  }, [values.team_id]);
+
   async function addCandidate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -124,10 +146,14 @@ export default function AdminCandidatesPage() {
       return;
     }
 
-    const teamPositions = positions.filter((pos) => pos.team_id === values.team_id);
     if (teamPositions.length === 0) {
-      toast.error("No positions found for the selected team");
-      return;
+      if (loadingPositions) {
+        toast.error("Loading positions...");
+        return;
+      } else {
+        toast.error("No positions found for the selected team. Run db:seed first.");
+        return;
+      }
     }
 
     const hasCandidates = values.candidates.some(
@@ -158,6 +184,12 @@ export default function AdminCandidatesPage() {
         formData.append("team_id", values.team_id);
         formData.append("bio", candidate.bio);
         formData.append("image", candidate.image);
+        if (candidate.running_mate_name) {
+          formData.append("running_mate_name", candidate.running_mate_name);
+        }
+        if (candidate.running_mate_image) {
+          formData.append("running_mate_image", candidate.running_mate_image);
+        }
 
         const response = await fetch("/api/candidates", { method: "POST", body: formData });
         if (!response.ok) {
@@ -172,10 +204,10 @@ export default function AdminCandidatesPage() {
       setValues({
         team_id: "",
         candidates: [
-          { full_name: "", bio: "", image: null, position_id: "" },
-          { full_name: "", bio: "", image: null, position_id: "" },
-          { full_name: "", bio: "", image: null, position_id: "" },
-          { full_name: "", bio: "", image: null, position_id: "" },
+          { full_name: "", bio: "", image: null, position_id: "", running_mate_name: "", running_mate_image: null },
+          { full_name: "", bio: "", image: null, position_id: "", running_mate_name: "", running_mate_image: null },
+          { full_name: "", bio: "", image: null, position_id: "", running_mate_name: "", running_mate_image: null },
+          { full_name: "", bio: "", image: null, position_id: "", running_mate_name: "", running_mate_image: null },
         ],
       });
       loadCandidates().catch(() => setCandidates([]));
@@ -234,8 +266,7 @@ export default function AdminCandidatesPage() {
 
           <label className="block text-sm font-medium text-slate-700">
             Team Name
-            <input
-              type="text"
+            <select
               value={values.team_id}
               onChange={(e) => {
                 setValues((current) => ({
@@ -247,9 +278,15 @@ export default function AdminCandidatesPage() {
                   })),
                 }));
               }}
-              placeholder="Enter team name"
-              className="mt-2 w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-[#1a2744] focus:ring-2 focus:ring-[#c9a84c]/30"
-            />
+              className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-[#1a2744] focus:ring-2 focus:ring-[#c9a84c]/30"
+            >
+              <option value="">Select team</option>
+              {teams.map((team) => (
+                <option key={team.id} value={team.id}>
+                  {team.name}
+                </option>
+              ))}
+            </select>
           </label>
 
           {values.team_id && (
@@ -257,7 +294,6 @@ export default function AdminCandidatesPage() {
               <h3 className="text-lg font-medium text-[#1a2744]">Add Candidates for {teams.find((t) => t.id === values.team_id)?.name}</h3>
 
               {values.candidates.map((candidate, index) => {
-                const teamPositions = positions.filter((pos) => pos.team_id === values.team_id);
 
                 return (
                   <div key={index} className="rounded-2xl border border-slate-200 bg-slate-50 p-6 space-y-4">
@@ -333,6 +369,44 @@ export default function AdminCandidatesPage() {
                         />
                       </label>
                     </div>
+
+                    {(() => {
+                      const selectedPosition = teamPositions.find(p => p.id === candidate.position_id);
+                      if (selectedPosition?.is_combined) {
+                        return (
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <label className="block text-sm font-medium text-slate-700">
+                              Running Mate Name
+                              <input
+                                type="text"
+                                value={candidate.running_mate_name}
+                                onChange={(e) => {
+                                  const newCandidates = [...values.candidates];
+                                  newCandidates[index].running_mate_name = e.target.value;
+                                  setValues((current) => ({ ...current, candidates: newCandidates }));
+                                }}
+                                placeholder="Enter running mate name"
+                                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-[#1a2744] focus:ring-2 focus:ring-[#c9a84c]/30"
+                              />
+                            </label>
+                            <label className="block text-sm font-medium text-slate-700">
+                              Running Mate Photo
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  const newCandidates = [...values.candidates];
+                                  newCandidates[index].running_mate_image = e.target.files?.[0] || null;
+                                  setValues((current) => ({ ...current, candidates: newCandidates }));
+                                }}
+                                className="mt-2 w-full rounded-3xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-[#1a2744] focus:ring-2 focus:ring-[#c9a84c]/30 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1a2744] file:text-white hover:file:bg-[#2a3a54]"
+                              />
+                            </label>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 );
               })}

@@ -1,20 +1,20 @@
 import { z } from "zod";
 
-export const registerSchema = z
-  .object({
-    full_name: z.string().min(3, "Full name is required"),
-    email: z.string().email("Enter a valid email"),
-    phone: z.string().min(7, "Enter a valid phone number"),
-    member_id: z.string().min(3, "Member ID is required"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    confirmPassword: z.string().min(8, "Confirm your password"),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
+const baseRegisterSchema = z.object({
+  full_name: z.string().min(3, "Full name is required"),
+  email: z.string().email("Enter a valid email"),
+  phone: z.string().min(7, "Enter a valid phone number"),
+  member_id: z.string().min(3, "Member ID is required"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string().min(8, "Confirm your password"),
+});
 
-export const registerRequestSchema = registerSchema.omit({ confirmPassword: true });
+export const registerSchema = baseRegisterSchema.refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+export const registerRequestSchema = baseRegisterSchema.omit({ confirmPassword: true });
 
 export const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),

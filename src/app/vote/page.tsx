@@ -19,16 +19,22 @@ interface Candidate {
   running_mate_picture: string | null;
 }
 
+interface ElectionSettings {
+  is_active: boolean;
+  voting_start: string | null;
+  voting_end: string | null;
+}
+
 const steps = [
-  { id: "president", label: "President" },
-  { id: "vice_president", label: "Vice President" },
+  { id: "president", label: "President & Vice President" },
   { id: "general_secretary", label: "General Secretary" },
   { id: "financial_secretary", label: "Financial Secretary" },
 ];
 
 export default function VotePage() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [votedPositions, setVotedPositions] = useState<string[]>([]);
+  const [votedPositionTitles, setVotedPositionTitles] = useState<string[]>([]);
+  const [electionSettings, setElectionSettings] = useState<ElectionSettings | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -36,10 +42,12 @@ export default function VotePage() {
     Promise.all([
       fetch("/api/candidates").then((res) => res.json()),
       fetch("/api/votes/my-votes").then((res) => res.json()),
+      fetch("/api/election/settings").then((res) => res.json()),
     ])
-      .then(([candList, votes]) => {
+      .then(([candList, votedTitles, settings]) => {
         setCandidates(candList);
-        setVotedPositions(votes);
+        setVotedPositionTitles(votedTitles);
+        setElectionSettings(settings);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -50,7 +58,7 @@ export default function VotePage() {
     [candidates, currentStep.id],
   );
 
-  const completedSteps = steps.filter((step) => votedPositions.includes(step.id)).length;
+  const completedSteps = steps.filter((step) => votedPositionTitles.includes(step.id)).length;
 
   async function submitVote(candidate: Candidate) {
     const response = await fetch("/api/votes", {
@@ -70,7 +78,7 @@ export default function VotePage() {
     }
 
     toast.success("Vote recorded successfully");
-    setVotedPositions((current) => [...current, candidate.position_id]);
+    setVotedPositionTitles((current) => [...current, currentStep.id]);
     if (stepIndex < steps.length - 1) {
       setStepIndex(stepIndex + 1);
     }
@@ -81,6 +89,17 @@ export default function VotePage() {
       <main className="min-h-screen bg-[#f4f4f7] px-6 py-10 text-[#1a2744]">
         <div className="mx-auto max-w-5xl rounded-4xl border border-slate-200 bg-white p-12 shadow-sm">
           <p className="text-lg font-semibold">Loading voting options...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!electionSettings?.is_active) {
+    return (
+      <main className="min-h-screen bg-[#f4f4f7] px-6 py-10 text-[#1a2744]">
+        <div className="mx-auto max-w-5xl rounded-4xl border border-slate-200 bg-white p-12 shadow-sm text-center">
+          <h1 className="text-3xl font-semibold">Voting Not Available</h1>
+          <p className="mt-4 text-sm text-slate-600">Voting is not currently open. Please check back later.</p>
         </div>
       </main>
     );
@@ -114,7 +133,7 @@ export default function VotePage() {
               <CandidateCard
                 key={candidate.id}
                 candidate={candidate}
-                hasVoted={votedPositions.includes(candidate.position_id)}
+                hasVoted={votedPositionTitles.includes(candidate.position_title)}
                 onVote={() => submitVote(candidate)}
               />
             ))}

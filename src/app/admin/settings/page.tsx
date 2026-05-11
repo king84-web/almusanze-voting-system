@@ -140,6 +140,16 @@ export default function AdminSettingsPage() {
           <button onClick={saveSettings} className="rounded-full bg-[#c9a84c] px-6 py-3 text-sm font-semibold text-[#1a2744] hover:bg-[#b7a33b]">
             Save settings
           </button>
+          <button
+            onClick={() => {
+              const link = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/register`;
+              navigator.clipboard.writeText(link);
+              toast.success("Registration link copied!");
+            }}
+            className="ml-4 rounded-full bg-[#1a2744] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2a3a54]"
+          >
+            Copy Registration Link
+          </button>
         </div>
 
         <div className="rounded-4xl border border-rose-200 bg-white p-8 shadow-sm">
