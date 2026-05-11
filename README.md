@@ -72,3 +72,4 @@ A complete voting system built with Next.js App Router, TypeScript, Tailwind CSS
 
 The application can be deployed to Vercel or any platform supporting Next.js. Ensure environment variables are set for production.
 # Force redeploy
+# Force redeploy 2
