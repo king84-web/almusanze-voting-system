@@ -1,13 +1,11 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+const nextConfig = {
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-      },
-    ],
+    domains: ["res.cloudinary.com"],
+  },
+  experimental: {
+    serverActions: {
+      allowedOrigins: ["localhost:3000", "almusanze-voting-system.vercel.app"],
+    },
   },
 };
 

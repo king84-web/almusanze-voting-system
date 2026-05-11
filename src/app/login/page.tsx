@@ -3,8 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { getSession, signIn } from "next-auth/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { loginSchema } from "@/lib/validations";
@@ -12,9 +12,17 @@ import type { z } from "zod";
 
 type LoginForm = z.infer<typeof loginSchema>;
 
+const errorMessages: Record<string, string> = {
+  Configuration: "Server configuration error. Check environment variables.",
+  NotApproved: "Your account is pending admin approval. Please wait for approval before logging in.",
+  CredentialsSignin: "Invalid email or password.",
+};
+
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -23,8 +31,18 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
+  const initialError = useMemo(() => {
+    const error = searchParams?.get("error");
+    if (!error) {
+      return null;
+    }
+    return errorMessages[error] ?? "Login failed. Please try again.";
+  }, [searchParams]);
+
   async function onSubmit(values: LoginForm) {
     setIsSubmitting(true);
+    setLoginError(null);
+
     const result = await signIn("credentials", {
       redirect: false,
       email: values.email,
@@ -34,7 +52,7 @@ export default function LoginPage() {
     setIsSubmitting(false);
 
     if (result?.error) {
-      toast.error(result.error || "Login failed. Please try again.");
+      setLoginError(errorMessages[result.error] ?? "Login failed. Please try again.");
       return;
     }
 
@@ -53,6 +71,12 @@ export default function LoginPage() {
             Access your dashboard, review candidates, and cast your vote securely.
           </p>
         </div>
+
+        {(loginError || initialError) && (
+          <div className="mt-8 rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {loginError || initialError}
+          </div>
+        )}
 
         <form className="mt-10 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <label className="block text-sm font-medium text-slate-700">
