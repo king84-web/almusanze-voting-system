@@ -72,20 +72,20 @@ const config: NextAuthConfig = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }: { token: Record<string, unknown>; user?: Record<string, unknown> }) {
+    jwt: async ({ token, user }) => {
       if (user) {
         token.id = String(user.id ?? "")
-        token.role = String(user.role ?? "member")
+        token.role = String((user as any).role ?? "member")
         token.name = user.name
         token.email = user.email
       }
       return token
     },
-    async session({ session, token }: { session: Record<string, unknown>; token: Record<string, unknown> }) {
+    session: async ({ session, token }) => {
       return {
         ...session,
         user: {
-          ...(session.user as Record<string, unknown>),
+          ...session.user,
           id: String(token.id ?? ""),
           role: String(token.role ?? "member"),
           name: token.name,

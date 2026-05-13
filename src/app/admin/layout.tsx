@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 
 import { ReactNode } from "react";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
 import { db, users } from "@/lib/db";
 import { sql, eq, and } from "drizzle-orm";
 import AdminSidebar from "@/components/admin-sidebar";
@@ -16,6 +18,12 @@ async function getPendingCount() {
 }
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
+  const session = await auth();
+
+  if (!session || (session.user as any)?.role !== "admin") {
+    redirect("/admin/login");
+  }
+
   const pendingApprovals = await getPendingCount();
 
   return (

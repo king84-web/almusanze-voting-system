@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import Link from "next/link"
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -38,28 +38,24 @@ export default function LoginPage() {
       }
 
       if (result.error) {
-        if (result.error.includes("NotApproved")) {
-          setError("Your account is pending admin approval. Please wait.")
-        } else {
-          setError("Invalid email or password. Please try again.")
-        }
+        setError("Invalid admin email or password.")
         return
       }
 
       if (result.ok) {
-        await new Promise(resolve => setTimeout(resolve, 800))
+        await new Promise(resolve => setTimeout(resolve, 500))
         const sessionRes = await fetch("/api/auth/session")
         const session = await sessionRes.json()
 
         if (session?.user?.role === "admin") {
           router.push("/admin/dashboard")
+          router.refresh()
         } else {
-          router.push("/dashboard")
+          setError("Access denied. Admin credentials required.")
         }
-        router.refresh()
       }
     } catch (err) {
-      console.error("Login error:", err)
+      console.error("Admin login error:", err)
       setError("Something went wrong. Please try again.")
     } finally {
       setIsLoading(false)
@@ -81,13 +77,17 @@ export default function LoginPage() {
             bg-[#1a2744] rounded-full mb-4">
             <span className="text-[#c9a84c] font-bold text-xl">ALM</span>
           </div>
-          <h1 className="text-2xl font-bold text-[#1a2744]">Welcome Back</h1>
+          <h1 className="text-2xl font-bold text-[#1a2744]">Admin Login</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Sign in to ALM Voting System
+            Association of Liberians in Musanze
           </p>
+          <div className="inline-block bg-[#c9a84c] text-[#1a2744] text-xs 
+            font-bold px-3 py-1 rounded-full mt-2">
+            ADMIN ACCESS ONLY
+          </div>
         </div>
 
-        {/* Error Message */}
+        {/* Error */}
         {error && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -102,10 +102,11 @@ export default function LoginPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
+          
           {/* Email Field */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address
+              Admin Email
             </label>
             <input
               type="email"
@@ -113,7 +114,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              placeholder="Enter your email"
+              placeholder="admin@alm.org"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg 
                 focus:outline-none focus:ring-2 focus:ring-[#c9a84c] 
                 focus:border-transparent transition-all"
@@ -123,7 +124,7 @@ export default function LoginPage() {
           {/* Password Field */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
+              Admin Password
             </label>
             <div className="relative">
               <input
@@ -132,7 +133,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                placeholder="Enter your password"
+                placeholder="Enter admin password"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg 
                   focus:outline-none focus:ring-2 focus:ring-[#c9a84c] 
                   focus:border-transparent transition-all pr-12"
@@ -141,18 +142,10 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 
-                  text-gray-400 hover:text-gray-600"
+                  text-gray-400 hover:text-gray-600 text-lg"
               >
                 {showPassword ? "🙈" : "👁️"}
               </button>
-            </div>
-            <div className="text-right mt-1">
-              <Link
-                href="/forgot-password"
-                className="text-sm text-[#c9a84c] hover:underline"
-              >
-                Forgot Password?
-              </Link>
             </div>
           </div>
 
@@ -169,34 +162,26 @@ export default function LoginPage() {
           >
             {isLoading ? (
               <>
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" 
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" 
+                  fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10"
                     stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" 
+                  <path className="opacity-75" fill="currentColor"
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                 </svg>
                 Signing in...
               </>
             ) : (
-              "Sign In"
+              "Sign In as Admin"
             )}
           </motion.button>
         </form>
 
-        {/* Register Link */}
-        <p className="text-center text-sm text-gray-600 mt-6">
-          Do not have an account?{" "}
-          <Link href="/register" className="text-[#c9a84c] font-medium hover:underline">
-            Register here
-          </Link>
-        </p>
-
-        {/* Admin hint */}
-        <p className="text-center text-sm text-gray-400 mt-6">
-          Are you an admin?{" "}
-          <Link href="/admin/login" 
-            className="text-[#1a2744] hover:underline font-medium">
-            Admin Login
+        {/* Back to member login */}
+        <p className="text-center text-sm text-gray-500 mt-6">
+          Not an admin?{" "}
+          <Link href="/login" className="text-[#c9a84c] hover:underline font-medium">
+            Member Login
           </Link>
         </p>
       </motion.div>
