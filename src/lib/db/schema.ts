@@ -57,15 +57,27 @@ export const candidateApplications = pgTable("candidate_applications", {
 });
 
 export const candidates = pgTable("candidates", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
+  team_id: uuid("team_id").references(() => teams.id).notNull(),
+  position_id: uuid("position_id").references(() => positions.id).notNull(),
+  
+  // Main candidate (all positions)
   full_name: text("full_name").notNull(),
   profile_picture: text("profile_picture"),
-  position_id: uuid("position_id").references(() => positions.id),
-  team_id: uuid("team_id").references(() => teams.id),
-  bio: text("bio").notNull(),
+  party_affiliation: text("party_affiliation"),
+  previous_leadership: text("previous_leadership"),
+  letter_of_intent: text("letter_of_intent"),
+  bio: text("bio"),
+
+  // Running mate fields (President/VP only)
   running_mate_name: text("running_mate_name"),
   running_mate_picture: text("running_mate_picture"),
-  created_at: timestamp("created_at").notNull().defaultNow(),
+  running_mate_party: text("running_mate_party"),
+  running_mate_previous_leadership: text("running_mate_previous_leadership"),
+  running_mate_letter_of_intent: text("running_mate_letter_of_intent"),
+  running_mate_bio: text("running_mate_bio"),
+
+  created_at: timestamp("created_at").defaultNow(),
 });
 
 export const votes = pgTable(

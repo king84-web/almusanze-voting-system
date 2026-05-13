@@ -31,12 +31,15 @@ export async function POST(
     // Create the candidate
     await db.insert(candidates).values({
       full_name: app.full_name,
+      team_id: app.team_id || '',
+      position_id: app.position_id || '',
       profile_picture: app.profile_picture,
-      position_id: app.position_id,
-      team_id: app.team_id,
+      party_affiliation: app.party,
+      previous_leadership: app.previous_leadership_positions,
+      letter_of_intent: app.letter_of_intent,
       bio: app.bio,
       running_mate_name: app.running_mate_name,
-    });
+    } as any);
 
     // Update application status
     await db
