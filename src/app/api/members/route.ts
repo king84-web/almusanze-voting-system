@@ -1,52 +1,59 @@
-import { NextResponse } from "next/server";
-import { db, users, votes } from "@/lib/db";
-import { getCurrentUser, requireAdmin } from "@/lib/server/auth";
-import { desc, eq } from "drizzle-orm";
+import { NextRequest, NextResponse } from "next/server"
+import { neon } from "@neondatabase/serverless"
+import { auth } from "@/lib/auth"
 
-export async function GET(request: Request) {
-  const user = await getCurrentUser(request);
-  requireAdmin(user);
+export async function GET(req: NextRequest) {
+  try {
+    // 1. Check database connection
+    if (!process.env.DATABASE_URL) {
+      console.error("DATABASE_URL not set")
+      return NextResponse.json(
+        { error: "Database not configured" },
+        { status: 500 }
+      )
+    }
 
-  const [allUsers, allVotes] = await Promise.all([
-    db.select({
-      id: users.id,
-      full_name: users.full_name,
-      email: users.email,
-      phone: users.phone,
-      member_id: users.member_id,
-      role: users.role,
-      is_approved: users.is_approved,
-      created_at: users.created_at,
-    })
-      .from(users)
-      .orderBy(desc(users.created_at)),
-    db.select({ voter_id: votes.voter_id, position_id: votes.position_id })
-      .from(votes)
-      .orderBy(votes.voter_id),
-  ]);
+    // 2. Check authentication where needed
+    const session = await auth()
+    if (!session) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
 
-  const voteMap = new Map<string, string[]>();
+    // 3. Connect and query
+    const sql = neon(process.env.DATABASE_URL)
+    const members = await sql`
+      SELECT
+        u.id,
+        u.full_name,
+        u.email,
+        u.phone,
+        u.member_id,
+        u.role,
+        u.is_approved,
+        u.created_at,
+        COUNT(v.id) as vote_count
+      FROM users u
+      LEFT JOIN votes v ON v.voter_id = u.id
+      WHERE u.role = 'member'
+      GROUP BY u.id, u.full_name, u.email, u.phone,
+               u.member_id, u.role, u.is_approved, u.created_at
+      ORDER BY u.created_at DESC
+    `
 
-  allVotes
-    .filter((vote) => vote.voter_id !== null && vote.position_id !== null)
-    .forEach((vote) => {
-      const voter_id = vote.voter_id!;
-      const position_id = vote.position_id!;
-      const existing = voteMap.get(voter_id) ?? [];
-      voteMap.set(voter_id, [...existing, position_id]);
-    });
+    console.log("Members fetched:", members.length)
+    return NextResponse.json(members)
 
-  return NextResponse.json(
-    allUsers.map((member) => ({
-      id: member.id,
-      full_name: member.full_name,
-      email: member.email,
-      phone: member.phone,
-      member_id: member.member_id,
-      role: member.role,
-      is_approved: member.is_approved,
-      joined_at: member.created_at.toISOString(),
-      voted_positions: voteMap.get(member.id) ?? [],
-    })),
-  );
+  } catch (error: unknown) {
+    // 5. Log full error
+    console.error("API Error:", error)
+    return NextResponse.json(
+      { error: "Internal server error",
+        details: error instanceof Error ? error.message : String(error)
+      },
+      { status: 500 }
+    )
+  }
 }

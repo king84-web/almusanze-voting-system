@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 import { auth } from "@/lib/auth"
 
-export async function PATCH(
+export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -20,25 +20,32 @@ export async function PATCH(
     const sql = neon(process.env.DATABASE_URL)
 
     await sql`
-      UPDATE users
-      SET is_approved = true
-      WHERE id = ${id}
+      DELETE FROM votes
+      WHERE voter_id = ${id}
+    `
+
+    await sql`
+      DELETE FROM reset_tokens
+      WHERE user_id = ${id}
+    `
+
+    await sql`
+      DELETE FROM users
+      WHERE id = ${id} AND role = 'member'
     `
 
     await sql`
       INSERT INTO audit_logs (actor_id, action, metadata)
       VALUES (
         ${session.user.id},
-        'MEMBER_APPROVED',
-        ${JSON.stringify({ approved_user_id: id })}
+        'MEMBER_REJECTED',
+        ${JSON.stringify({ rejected_user_id: id })}
       )
     `
 
-    console.log("Member approved:", id)
     return NextResponse.json({ success: true, id })
-
   } catch (error: unknown) {
-    console.error("Approve error:", error)
+    console.error("Member delete error:", error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }

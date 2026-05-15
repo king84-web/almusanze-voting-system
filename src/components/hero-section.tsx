@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { CountdownTimer } from "@/components/countdown-timer";
-import { AdminLoginModal } from "@/components/admin-login-modal";
 import { Lock } from "lucide-react";
 
 interface ElectionSettings {
@@ -68,13 +67,13 @@ export default function HeroSection({ settings, targetDate }: HeroSectionProps) 
               >
                 Login
               </Link>
-              <button
-                onClick={() => setIsAdminModalOpen(true)}
+              <Link
+                href="/admin/login"
                 className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-[#ff6b6b] bg-[#ff6b6b]/10 backdrop-blur px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-white transition hover:bg-[#ff6b6b]/20 active:scale-95"
               >
                 <Lock className="h-4 w-4" />
                 Admin
-              </button>
+              </Link>
             </div>
           </div>
           <div className="rounded-4xl border-2 border-white bg-white/95 backdrop-blur p-4 sm:p-6 lg:p-8 shadow-2xl lg:max-w-xl w-full lg:w-auto">
@@ -124,7 +123,6 @@ export default function HeroSection({ settings, targetDate }: HeroSectionProps) 
         </footer>
       </section>
 
-      <AdminLoginModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} />
     </>
   );
 }

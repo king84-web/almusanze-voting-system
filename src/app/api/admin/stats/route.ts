@@ -1,30 +1,57 @@
-import { NextResponse } from "next/server";
-import { db, users, votes } from "@/lib/db";
-import { getCurrentUser, requireAdmin } from "@/lib/server/auth";
-import { and, count, eq } from "drizzle-orm";
+import { NextRequest, NextResponse } from "next/server"
+import { neon } from "@neondatabase/serverless"
+import { auth } from "@/lib/auth"
 
-export async function GET(request: Request) {
-  const currentUser = await getCurrentUser(request);
-  requireAdmin(currentUser);
+export async function GET(req: NextRequest) {
+  try {
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json({ error: "No database URL" }, { status: 500 })
+    }
 
-  const [memberCount, approvedCount, totalVotes] = await Promise.all([
-    db.select({ total: count() }).from(users).where(eq(users.role, "member")).then((result) => Number(result[0].total ?? 0)),
-    db.select({ total: count() }).from(users).where(and(eq(users.role, "member"), eq(users.is_approved, true))).then((result) => Number(result[0].total ?? 0)),
-    db.select({ total: count() }).from(votes).then((result) => Number(result[0].total ?? 0)),
-  ]);
+    const session = await auth()
+    if (!session || session.user.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
-  const positionTotals = await db
-    .select({ position_id: votes.position_id, total: count() })
-    .from(votes)
-    .groupBy(votes.position_id);
+    const sql = neon(process.env.DATABASE_URL)
 
-  const turnout = memberCount > 0 ? Math.round((totalVotes / memberCount) * 100) : 0;
+    const [totalMembers] = await sql`
+      SELECT COUNT(*) as count FROM users WHERE role = 'member'
+    `
+    const [approvedMembers] = await sql`
+      SELECT COUNT(*) as count FROM users
+      WHERE role = 'member' AND is_approved = true
+    `
+    const [totalVotes] = await sql`
+      SELECT COUNT(*) as count FROM votes
+    `
+    const [pendingApprovals] = await sql`
+      SELECT COUNT(*) as count FROM users
+      WHERE role = 'member' AND is_approved = false
+    `
 
-  return NextResponse.json({
-    total_members: memberCount,
-    approved_members: approvedCount,
-    total_votes: totalVotes,
-    turnout_percentage: turnout,
-    votes_per_position: positionTotals.map((row) => ({ position_id: row.position_id, votes: Number(row.total) })),
-  });
+    const approved = Number(approvedMembers.count)
+    const voted = Number(totalVotes.count)
+    const turnout = approved > 0
+      ? Math.round((voted / approved) * 100)
+      : 0
+
+    const stats = {
+      totalMembers: Number(totalMembers.count),
+      approvedMembers: approved,
+      totalVotes: voted,
+      pendingApprovals: Number(pendingApprovals.count),
+      turnout,
+    }
+
+    console.log("Stats:", stats)
+    return NextResponse.json(stats)
+
+  } catch (error: unknown) {
+    console.error("Stats API error:", error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 }
+    )
+  }
 }

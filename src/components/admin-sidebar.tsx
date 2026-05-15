@@ -12,6 +12,7 @@ interface AdminSidebarProps {
 const links = [
   { href: "/admin/dashboard", label: "Dashboard" },
   { href: "/admin/members", label: "Members" },
+  { href: "/admin/teams", label: "Teams" },
   { href: "/admin/candidates", label: "Candidates" },
   { href: "/admin/results", label: "Results" },
   { href: "/admin/settings", label: "Settings" },
